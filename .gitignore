@@ -139,3 +139,5 @@ cython_debug/
 
 .idea
 .projectInfo.json
+
+node_modules

@@ -141,3 +141,5 @@ cython_debug/
 .projectInfo.json
 
 node_modules
+
+credentials.json

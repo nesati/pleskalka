@@ -20,6 +20,8 @@ pip install -r requirements.txt
 #### Pandoc
 [pandoc.org/installing](https://pandoc.org/installing.html)
 
+#### FFmpeg
+[ffmpeg.org/download.html](https://ffmpeg.org/download.html)
 ### Extras
 #### pdf2md
 ```

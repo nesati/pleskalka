@@ -42,3 +42,8 @@ Made out of a few code samples found on the internet.
 [roman numeral validator](https://stackoverflow.com/questions/267399/how-do-you-match-only-valid-roman-numerals-with-a-regular-expression)  
 [roman numeral encoder](https://stackoverflow.com/questions/28777219/basic-program-to-convert-integer-to-roman-numerals)  
 [roman numeral decoder](https://rosettacode.org/wiki/Roman_numerals/Decode)  
+
+## Usage
+```
+./TTS\ File.py <path>
+```

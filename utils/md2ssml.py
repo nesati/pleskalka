@@ -8,8 +8,8 @@ from html.parser import HTMLParser
 
 from markdown import markdown
 
-import separator as separator
-from tts_preprocess import TTSPreprocessor
+import utils.separator as separator
+from utils.tts_preprocess import TTSPreprocessor
 
 RE_ITALICS = r"\*([^*]+)\*"
 RE_QUOTES = r"[„\"“]([^^„\"“”“]+)[“\"”]"

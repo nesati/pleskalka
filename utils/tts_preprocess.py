@@ -4,7 +4,7 @@ Processes text so that it is read correctly.
 import logging
 import re
 
-import roman_num as roman
+import utils.roman_num as roman
 
 
 class TTSPreprocessor:

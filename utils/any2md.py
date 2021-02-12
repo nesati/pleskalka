@@ -26,7 +26,7 @@ def pandoc(file, output):
     :param file: path to input file
     :param output: path to markdown file
     """
-    os.system(f"pandoc -o '{os.path.realpath(output)}' -t markdown_strict '{os.path.realpath(file)}'")
+    os.system(f"pandoc -o '{os.path.realpath(output)}' -t markdown_strict --atx-headers '{os.path.realpath(file)}'")
 
 
 def file2md(path):

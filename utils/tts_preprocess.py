@@ -15,12 +15,14 @@ class TTSPreprocessor:
         Roman numbers
         Ordinal numbers
         Full names
+        Arrows
     """
 
-    def __init__(self, use_roman=True, use_ordinal=True, full_names=True):
+    def __init__(self, use_roman=True, use_ordinal=True, full_names=True, arrows=True):
         self.use_roman = use_roman
         self.use_ordinal = use_ordinal
         self.full_names = full_names
+        self.arrows = arrows
 
     def _roman_translate(self, match):
         output = match.group()
@@ -79,6 +81,16 @@ class TTSPreprocessor:
         output = re.sub(roman.RE_FIND, self._roman_translate, text)
         return output
 
+    def arrow_preprocessor(self, text):
+        """
+        Finds arrows and writes them in plain text.
+
+        :param text: text
+        :return: modified text
+        """
+        output = re.sub(r'[-—―–‒−‐­=]+ ?>', ' šipka ', text)
+        return output
+
     def ordinal_preprocessor(self, text):
         """
         Finds roman numerals and marks them in ssml.
@@ -105,6 +117,8 @@ class TTSPreprocessor:
             output = self.name_preprocessor(output)
         if self.use_roman:
             output = self.roman_preprocessor(output)
+        if self.arrows:
+            output = self.arrow_preprocessor(output)
         if self.use_ordinal:
             output = self.ordinal_preprocessor(output)
         return output

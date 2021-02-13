@@ -86,10 +86,6 @@ def file2md(path):
         tmpdir.cleanup()
 
         return md
-    elif ext == "ssml":
-        logging.info("Interpreting as raw SSML")
-        with open(path, 'r') as f:
-            ssml = f.read()
     else:
         logging.warning(f"unknown file extension {ext}")
         logging.info("assuming plain markdown")

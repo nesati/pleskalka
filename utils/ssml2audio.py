@@ -6,12 +6,15 @@ Covers speech synthesis markup language to audio.
 import logging
 import socket
 import os
+import tempfile
 
 from google.cloud import texttospeech
 
 os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = "credentials.json"
 
 socket.setdefaulttimeout(300)  # hack to avoid timeout error
+
+tmpdir = tempfile.TemporaryDirectory()
 
 
 # noinspection PyTypeChecker
@@ -49,7 +52,7 @@ def ssml2audio(ssml_text, outfile):
     filename = os.path.split(outfile)[1]
 
     for num, ssml_line in enumerate(lines):
-        path = f"/tmp/{filename}{num}.mp3"
+        path = os.path.join(tmpdir.name, f"{filename}{num}.mp3")
 
         # Sets the text input to be synthesized
         synthesis_input = texttospeech.SynthesisInput(ssml=ssml_line)
@@ -67,13 +70,12 @@ def ssml2audio(ssml_text, outfile):
         paths.append(path)
 
     # concatenate
-    with open("/tmp/paths.txt", "w") as f:
+    with open(os.path.join(tmpdir.name, "paths.txt"), 'w', encoding='UTF-8') as f:
         f.write("\n".join(map(lambda x: f"file '{x}'", paths)))
-    os.system(f"ffmpeg -y -f concat -safe 0 -i /tmp/paths.txt '{outfile}.mp3'")
+    os.system(f'ffmpeg -y -f concat -safe 0 -i "{os.path.join(tmpdir.name, "paths.txt")}" "{outfile}.mp3"')
 
     # delete temporary files
-    for file in paths:
-        os.remove(file)
+    tmpdir.cleanup()
 
 
 if __name__ == '__main__':

@@ -4,6 +4,9 @@ Converts most files to markdown.
 """
 import logging
 import os
+import tempfile
+
+tmpdir = tempfile.TemporaryDirectory()
 
 
 def pdf2md(file):
@@ -15,7 +18,7 @@ def pdf2md(file):
     :return: str: markdown
     """
     import subprocess
-    return subprocess.check_output(f"node utils/pdf2md.js '{os.path.realpath(file)}'", shell=True, encoding='UTF-8')
+    return subprocess.check_output(f'node utils/pdf2md.js "{os.path.realpath(file)}"', shell=True, encoding='UTF-8')
 
 
 def pandoc(file, output):
@@ -26,7 +29,7 @@ def pandoc(file, output):
     :param file: path to input file
     :param output: path to markdown file
     """
-    os.system(f"pandoc -o '{os.path.realpath(output)}' -t markdown_strict --atx-headers '{os.path.realpath(file)}'")
+    os.system(f'pandoc -o "{os.path.realpath(output)}" -t markdown_strict --atx-headers "{os.path.realpath(file)}"')
 
 
 def file2md(path):
@@ -62,12 +65,12 @@ def file2md(path):
 
         if re.search(r'\w', md) is None:
             logging.warning("Pdf seems to be empty attempting OCR using OCRmyPDF")
-            os.system(f"ocrmypdf -l ces -j 8 '{path}' '{path}.ocr.pdf'")
+            os.system(f'ocrmypdf -l ces -j 8 "{path}" "{os.path.join(tmpdir.name, "ocr.pdf")}"')
 
             logging.info("parsing pdf using @opendocsg/pdf2md")
-            md = pdf2md(path + ".ocr.pdf")
+            md = pdf2md(os.path.join(tmpdir.name, "ocr.pdf"))
 
-            os.remove(path + ".ocr.pdf")
+            tmpdir.cleanup()
         return md
     elif ext == 'doc':
         # TODO convert using libreoffice
@@ -76,11 +79,11 @@ def file2md(path):
     elif ext in ['html', 'odt', 'docx', 'epub']:  # TODO all formats supported by pandoc
         logging.info(f"parsing {ext} using pandoc")
 
-        pandoc(path, '/tmp/converted.md')
-        with open('/tmp/converted.md', 'r') as f:
+        pandoc(path, os.path.join(tmpdir.name, 'converted.md'))
+        with open(os.path.join(tmpdir.name, 'converted.md'), 'r', encoding='UTF-8') as f:
             md = f.read()
 
-        os.remove('/tmp/converted.md')
+        tmpdir.cleanup()
 
         return md
     elif ext == "ssml":

@@ -121,6 +121,9 @@ def md2ssml(md):
     # fix words split by newline
     md = re.sub(r'(?<=\S)[-—―–‒−‐­]\s+', '', md)
 
+    # fix comment tags
+    md = re.sub(r'<[-!]+>', ' ', md)
+
     # parse markdown
     html = markdown(md)
 

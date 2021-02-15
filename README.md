@@ -34,6 +34,9 @@ npm install
 #### OCRmyPDF
 [github.com/jbarlow83/OCRmyPDF](https://github.com/jbarlow83/OCRmyPDF#installation)
 
+#### LibreOffice
+[libreoffice.org/download](https://www.libreoffice.org/download/download/)
+
 ## Usage
 ```
 ./TTS\ File.py <path>

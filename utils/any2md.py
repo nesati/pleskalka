@@ -32,6 +32,17 @@ def pandoc(file, output):
     os.system(f'pandoc -o "{os.path.realpath(output)}" -t markdown_strict --atx-headers "{os.path.realpath(file)}"')
 
 
+def libreoffice(file, outdir):
+    """
+    A python wrapper for the libre office.
+    Converts a file to odt.
+
+    :param file: path to input file
+    :param outdir: path to output directory
+    """
+    os.system(f'soffice --headless --convert-to odt --outdir "{os.path.realpath(outdir)}" "{os.path.realpath(file)}"')
+
+
 def file2md(path):
     """
     Converts most files to markdown. Assumes files have proper extensions.
@@ -72,10 +83,18 @@ def file2md(path):
 
             tmpdir.cleanup()
         return md
-    elif ext == 'doc':
-        # TODO convert using libreoffice
-        logging.fatal('.doc not support please convert to docx using other program')
-        exit(1)
+    elif ext in ['doc', 'rtf']:
+        logging.info(f"parsing {ext} using libreoffice")
+        libreoffice(path, tmpdir.name)
+
+        logging.info(f"parsing odt using pandoc")
+        pandoc(os.path.join(tmpdir.name, '.'.join(path.split('.')[:-1])+'.odt'), os.path.join(tmpdir.name, "converted.md"))
+        with open(os.path.join(tmpdir.name, 'converted.md'), 'r', encoding='UTF-8') as f:
+            md = f.read()
+
+        tmpdir.cleanup()
+
+        return md
     elif ext in ['html', 'odt', 'docx', 'epub', 'creole', 'dbk', 'xml', 'haddock', 'ipynb', 'jats', 'jira', 'man',
                  'muse', 'opml', 'org', 'rst', 't2t', 'textile']:
         logging.info(f"parsing {ext} using pandoc")

@@ -124,6 +124,10 @@ def md2ssml(md):
     # fix comment tags
     md = re.sub(r'<[-!]+>', ' ', md)
 
+    # fix whitespaces (affects markdown header parsing)
+    md = re.sub(r'^\s+', '\n', md, flags=re.MULTILINE)
+    md = re.sub(r'\s+$', '\n', md, flags=re.MULTILINE)
+
     # parse markdown
     html = markdown(md)
 

@@ -76,7 +76,8 @@ def file2md(path):
         # TODO convert using libreoffice
         logging.fatal('.doc not support please convert to docx using other program')
         exit(1)
-    elif ext in ['html', 'odt', 'docx', 'epub']:  # TODO all formats supported by pandoc
+    elif ext in ['html', 'odt', 'docx', 'epub', 'creole', 'dbk', 'xml', 'haddock', 'ipynb', 'jats', 'jira', 'man',
+                 'muse', 'opml', 'org', 'rst', 't2t', 'textile']:
         logging.info(f"parsing {ext} using pandoc")
 
         pandoc(path, os.path.join(tmpdir.name, 'converted.md'))

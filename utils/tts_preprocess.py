@@ -4,7 +4,45 @@ Processes text so that it is read correctly.
 import logging
 import re
 
+import enchant
+from weighted_levenshtein import lev
+import numpy as np
+
 import utils.roman_num as roman
+
+diacritics = {
+    'ě': 'e',
+    'é': 'e',
+    'ú': 'u',
+    'ů': 'u',
+    'š': 's',
+    'č': 'c',
+    'ř': 'r',
+    'ž': 'z',
+    'ý': 'y',
+    'á': 'a',
+    'í': 'i',
+    'ó': 'o',
+    'ď': 'd',
+    'ň': 'n',
+    'ť': 't',
+}
+
+diacritics = str.maketrans(diacritics)
+
+substitute_costs = np.ones((128, 128), dtype=np.float64)
+
+# substituting m and n is cheaper
+substitute_costs[ord('m'), ord('n')] = 0.5
+substitute_costs[ord('n'), ord('m')] = 0.5
+
+# substituting r and n is cheaper
+substitute_costs[ord('r'), ord('n')] = 0.5
+substitute_costs[ord('n'), ord('r')] = 0.5
+
+# for ocr correction insertion and deletion have a bigger cost than substitution
+insert_costs = np.ones(128, dtype=np.float64) + 0.25
+delete_costs = np.ones(128, dtype=np.float64) + 0.25
 
 
 class TTSPreprocessor:
@@ -16,13 +54,17 @@ class TTSPreprocessor:
         Ordinal numbers
         Full names
         Arrows
+        Autocorrect
     """
 
-    def __init__(self, use_roman=True, use_ordinal=True, full_names=True, arrows=True):
+    def __init__(self, use_roman=True, use_ordinal=True, full_names=True, arrows=True, autocorrect=True):
         self.use_roman = use_roman
         self.use_ordinal = use_ordinal
         self.full_names = full_names
         self.arrows = arrows
+        self.autocorrect = autocorrect
+
+        self.dictionary = enchant.Dict("cs")
 
     def _roman_translate(self, match):
         output = match.group()
@@ -91,6 +133,72 @@ class TTSPreprocessor:
         output = re.sub(r'[-—―–‒−‐­=]+ ?>', ' šipka ', text)
         return output
 
+    def onlyascii(self, char):
+        if ord(char) < 48 or ord(char) > 127:
+            return ''
+        else:
+            return char
+
+    def distance(self, text1, text2):
+        # filter text
+        text1 = text1.lower()
+        # unfortunately weighted_levenshtein doesn't support unicode so diacritics have a cost of 0
+        text1 = text1.translate(diacritics)
+        text1 = ''.join(filter(self.onlyascii, text1))
+
+        text2 = text2.lower()
+        # unfortunately weighted_levenshtein doesn't support unicode so diacritics have a cost of 0
+        text2 = text2.translate(diacritics)
+        text2 = ''.join(filter(self.onlyascii, text2))
+
+        return lev(text1, text2, insert_costs=insert_costs, delete_costs=delete_costs,
+                   substitute_costs=substitute_costs)
+
+    def autocorrect_preprocessor(self, text):
+        """
+        Checks each word againts a dictionary and tries to correct it.
+
+        :param text: text
+        :return: modified text
+        """
+
+        tokens = re.finditer(r'([-—―–‒−‐­0-9aábcčdďeéěfghiíjklmnňoópqrřsštťuúůvwxyýzž]+|[^ ])', text,
+                             flags=re.IGNORECASE)
+        words = []
+        for token in tokens:
+            token = token.group()
+            if len(token) == 1 and token[0] not in '-—―–‒−‐­0-9aábcčdďeéěfghiíjklmnňoópqrřsštťuúůvwxyýzž':
+                words.append(token)
+            elif self.dictionary.check(token):
+                words.append(token)
+            else:
+                suggestions = self.dictionary.suggest(token)
+
+                if len(suggestions) == 0:
+                    logging.warning(f'no correction for {token}')
+                    words.append(token)
+                    continue
+
+                distances = list(map(lambda suggestion: self.distance(suggestion, token), suggestions))
+                min_distance = min(distances)
+
+                if min_distance > 2:
+                    logging.warning(f'no correction for {token}')
+                    words.append(token)
+                    continue
+
+                min_positions = [i for i, x in enumerate(distances) if x == min_distance]
+
+                if len(min_positions) > 1:
+                    logging.warning(f'ambiguous correction for {token}')
+                    logging.debug(f'corrections: {list(map(lambda idx: suggestions[idx], min_positions))}')
+                    words.append(token)
+                    continue
+
+                words.append(suggestions[min_positions[0]])
+
+        return " ".join(words)
+
     def ordinal_preprocessor(self, text):
         """
         Finds roman numerals and marks them in ssml.
@@ -119,6 +227,8 @@ class TTSPreprocessor:
             output = self.roman_preprocessor(output)
         if self.arrows:
             output = self.arrow_preprocessor(output)
+        if self.autocorrect:
+            output = self.autocorrect_preprocessor(output)
         if self.use_ordinal:
             output = self.ordinal_preprocessor(output)
         return output

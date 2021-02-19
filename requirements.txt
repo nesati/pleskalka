@@ -1,3 +1,6 @@
 markdown
 wikipedia
 google-cloud-texttospeech
+pyenchant
+weighted-levenshtein
+numpy

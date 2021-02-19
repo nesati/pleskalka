@@ -128,6 +128,12 @@ def md2ssml(md):
     md = re.sub(r'^\s+', '\n', md, flags=re.MULTILINE)
     md = re.sub(r'\s+$', '\n', md, flags=re.MULTILINE)
 
+    # improve paragraph detection (paragraphs are irrelevant for pronunciation and are used as parsing helpers only)
+    md = re.sub(r'(^#{1,6} .+)\n([\w\W]*?)(?=^#{1,6} .*)',
+                lambda match: match.group(1) + '\n\n' + re.sub(r'\s+', ' ', match.group(2),
+                                                               flags=re.MULTILINE) + '\n\n', md + '\n# ',
+                flags=re.MULTILINE)
+
     # parse markdown
     html = markdown(md)
 
